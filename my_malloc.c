@@ -1,5 +1,6 @@
 # include "my_malloc.h"
 # include "assert.h"
+# include "pthread.h"
 # define INT_MAX 2147483647
 
 // global variables in main C program
@@ -8,7 +9,7 @@ static int first_call = 1;
 static struct link_node* first_node = NULL;
 static struct link_node* last_node = NULL;
 static unsigned long total_free = 0;
-
+static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 // abstraction both for ff and bf, using it to set the new node's property
 // no return, just setting
@@ -47,8 +48,13 @@ void split(struct link_node * node, size_t size){
 // involve mergeing with adjacent free area
 // no return value  
 void ts_free_lock(void *ptr){
+  if (ptr == NULL){
+    return;
+  }
+  pthread_mutex_lock(&mutex);
   struct link_node* p = (struct link_node*)ptr - 1;
-  if (p->isfree == 1){
+  if (p == NULL || p->isfree == 1){
+    pthread_mutex_unlock(&mutex);
     return;
   }
   
@@ -73,6 +79,7 @@ void ts_free_lock(void *ptr){
     if(p->next != NULL){
       p->next->last = p;
     }
+    pthread_mutex_unlock(&mutex);
     return;
   }
 
@@ -84,6 +91,8 @@ void ts_free_lock(void *ptr){
       p->next->last = p;
     }
   }
+
+  pthread_mutex_unlock(&mutex);
 }
 
 
@@ -125,8 +134,10 @@ struct link_node * bf_search_free_node(size_t size){
 
 // main API implementation for BF stategy
 void * ts_malloc_lock(size_t size){
+  pthread_mutex_lock(&mutex);
   struct link_node* node_ptr;
   if (size <= 0){
+    pthread_mutex_unlock(&mutex);
     return NULL;
   }
 
@@ -134,6 +145,7 @@ void * ts_malloc_lock(size_t size){
     node_ptr = sbrk(0); 
     void * malloced = sbrk(size + NODE_SIZE);
     if (malloced == (void *) -1){
+      pthread_mutex_unlock(&mutex);
       return NULL;
     }
     
@@ -149,6 +161,7 @@ void * ts_malloc_lock(size_t size){
        node_ptr = sbrk(0); 
        void * malloced = sbrk(size + NODE_SIZE); 
        if (malloced == (void *) -1){
+         pthread_mutex_unlock(&mutex);
 	 return NULL;
        }
        if (last_node != NULL){
@@ -158,5 +171,6 @@ void * ts_malloc_lock(size_t size){
      }
   }    
   void * content = node_ptr + 1;
+  pthread_mutex_unlock(&mutex);
   return content;
 }

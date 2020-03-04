@@ -4,35 +4,11 @@
 
 // global variables in main C program
 // convenient for functions to invoke
-int first_call = 1;
-struct link_node* first_node = NULL;
-struct link_node* last_node = NULL;
-unsigned long total_free = 0;
-unsigned long total_segment = 0;
-unsigned long largest_free = 0;
+static int first_call = 1;
+static struct link_node* first_node = NULL;
+static struct link_node* last_node = NULL;
+static unsigned long total_free = 0;
 
-// using glaobal variable total_free to get the current total free memory
-unsigned long get_total_free_size(){ 
-  return total_free;
-}
-
-// using glaobal variable total_segment to get the current total memory (for testing) 
-unsigned long get_data_segment_size(){
-  return total_segment;
-}
-
-// using "once" traverse for Link_Node structure to fidn the largest free data size
-unsigned long get_largest_free_data_segment_size(){
-  struct link_node * temp= first_node;
-  unsigned long curr_max = 0;
-  while(temp != NULL){
-    if(temp->isfree == 1 && temp->length > curr_max){
-      curr_max = temp->length; 
-    }
-    temp = temp -> next;
-  }
-  return curr_max;
-}
 
 // abstraction both for ff and bf, using it to set the new node's property
 // no return, just setting
@@ -43,7 +19,6 @@ void set_new_malloc(struct link_node * node_ptr, size_t size){
   node_ptr->isfree = 0;
   node_ptr->length = size;
   node_ptr->curr_size = size;
-  total_segment += node_ptr->length;
 }
 
 // abstraction both for ff and bf, using it to use left space later
@@ -176,7 +151,9 @@ void * ts_malloc_lock(size_t size){
        if (malloced == (void *) -1){
 	 return NULL;
        }
-       last_node->next = node_ptr;
+       if (last_node != NULL){
+         last_node->next = node_ptr;
+       }
        set_new_malloc(node_ptr, size);
      }
   }    

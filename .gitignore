@@ -1,0 +1,5 @@
+/thread_tests/*
+!/thread_tests/*.c
+!/thread_tests/Makefile
+HW2_KIT_README
+*.o

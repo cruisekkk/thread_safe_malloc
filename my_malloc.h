@@ -23,12 +23,11 @@ void split(struct link_node* node, size_t size);
 
 
 
-// Best Fit malloc/free
+// lock version Best Fit malloc/free
 void * ts_malloc_lock(size_t size);
 void ts_free_lock(void * ptr);
 
 
-// For memory fragmentation
-unsigned long get_largest_free_data_segment_size(); //in bytes
-unsigned long get_total_free_size(); //in bytes
-unsigned long get_data_segment_size();
+// no lock version Best Fit malloc/free
+void * ts_malloc_nolock(size_t size);
+void ts_free_nolock(void * ptr);
